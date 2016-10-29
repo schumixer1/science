@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cmath>
 #include<iomanip>
+#include <fstream>
 using namespace std;
 const int SIZE = 15;
 int main()
@@ -29,25 +30,41 @@ int main()
   double molarMassofUran = 238.02891;
   double Na = 6.02e23;
   double N[SIZE]{};
-  double dNInDt[SIZE]{};
+  double dN[SIZE]{};
   N[0] = massOfUran*Na / molarMassofUran;
   cout << N[0];
-  int time = 10;// 1 * 60 * 60 * 24;
-  dNInDt[0] = N[0] / (period[0] * log(2));
-
-  for (int t{}; t <= time; t++)
+  int time = 365 * 60 * 60 * 24;
+  int t0 = 1;
+  dN[0] = N[0] / period[0] * log(2)*t0;;
+  ofstream f("result.txt");
+  for (int t{}; t <= time; t=t+t0)
     {
-    cout << endl << endl <<endl<< t << " s" << endl << endl << endl;
-    for (size_t i = 1; i < SIZE; i++)
+    //cout << endl << endl <<endl<< t << " s" << endl << endl << endl;
+    //cout << setw(15) << N[0] << "\t";
+    for (size_t i = 1; i < SIZE-1; i++)
       {
+      N[i] = N[i] + dN[i - 1];// -dN[i];//кол-во частиц в момент времени t
+      if (t0 < period[i] / 10)
+        dN[i] = N[i] / period[i] * log(2)*t0;//кол-во распавшихся частиц в момент времени t
+      else
+        dN[i] = N[i] * (1 - pow(2, -t0 / period[i]));
+
       
-      N[i]+=  dNInDt[i - 1];// -dNInDt[i];
-      dNInDt[i] = N[i] / (period[i] * log(2));
-      N[i] -= dNInDt[i];
-      cout <<setw(15)<< N[i] << "\t";
+      if (dN[i]>N[i])
+        dN[i] = N[i];
+      N[i] = N[i] - dN[i];
+      
+     // cout <<setw(15)<< N[i] << "\t";
       }
-    N[0] = N[0] - dNInDt[0];
-    dNInDt[0] = N[0] / (period[0] * log(2));
+    N[14] = N[14] + dN[13];
+    N[0] = N[0] - dN[0];
+    dN[0] = N[0] / period[0] * log(2)*t0;
+    //cout << setw(15) << N[14] << "\t";
     }
+  for (int i = 0; i < 15; i++)
+    {
+    f << setw(15) << N[i] << "\t" << dN[i] << endl;
+    }
+ 
   system("pause");
   }
